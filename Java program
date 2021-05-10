@@ -1,0 +1,573 @@
+//LOGIN PAGE IN JAVA
+package com.info.controler;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import com.info.service.AdminService;
+import com.info.service.ConnectionProvider;
+@WebServlet("/Login")
+public class Login extends HttpServlet {
+private static final long serialVersionUID = 1L;
+public Login() {
+super();
+}
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+HttpSession session=request.getSession();
+String option=request.getParameter("option");
+String username=request.getParameter("username");
+String password=request.getParameter("password");
+if (option.equals("Admin"))
+{
+AdminService obj=new AdminService();
+boolean flag =obj.loginValidation(username, password);
+if (flag)
+{
+RequestDispatcher rd=request.getRequestDispatcher("WelcomeAdmin");
+rd.forward(request, response);
+}
+else
+{
+response.sendRedirect("index.jsp");}
+{else if (option.equals("User"))
+{boolean flag=false;
+String uid="";
+String name="";
+String phone="";
+String email="";
+String query="select * from user where username=? and password=?";
+try
+{
+Connection con= ConnectionProvider.getConnection();
+PreparedStatement ps =con.prepareStatement(query);
+ps.setString(1, username);
+ps.setString(2, password);
+ResultSet rs=ps.executeQuery();
+while(rs.next())
+{
+flag=true;
+uid=rs.getString(7);
+name=rs.getString(1);
+phone=rs.getString(3);
+email=rs.getString(2);
+}
+}
+catch(Exception e)
+{
+System.out.println("Validation faild---"+e);
+}
+if (flag)
+{
+session.setAttribute("userID", uid);
+session.setAttribute("userName", name);
+session.setAttribute("userPhone", phone);
+session.setAttribute("userEmail", email);
+RequestDispatcher rd=request.getRequestDispatcher("WelcomeUser");
+rd.forward(request, response);
+}
+else
+{
+response.sendRedirect("index.jsp");
+}
+}
+else if (option.equals("Staff"))
+{
+boolean flag=false;
+String query="select * from staff where username=? and password=?";
+try
+{
+Connection con= ConnectionProvider.getConnection();
+PreparedStatement ps =con.prepareStatement(query);
+ps.setString(1, username);
+ps.setString(2, password);
+ResultSet rs=ps.executeQuery();
+while(rs.next())
+{
+flag=true;
+String	staffId=rs.getString(10);
+String	subjectName=rs.getString(6);
+String	sectionName=rs.getString(7);
+String	courseName=rs.getString(5);
+session.setAttribute("staffId", staffId);
+session.setAttribute("sectionName", sectionName);
+session.setAttribute("subjectName", subjectName);
+session.setAttribute("courseName", courseName);
+}
+}
+catch(Exception e)
+{
+System.out.println("Validation faild---"+e);
+}
+if (flag)
+{
+
+RequestDispatcher rd=request.getRequestDispatcher("WelcomeStaff");
+rd.forward(request, response);
+}
+else
+{
+response.sendRedirect("index.jsp");
+}
+
+}
+else if (option.equals("Student"))
+{
+boolean flag=false;
+String query="select * from student where username=? and password=?";
+try
+{
+Connection con= ConnectionProvider.getConnection();
+PreparedStatement ps =con.prepareStatement(query);
+ps.setString(1, username);
+ps.setString(2, password);
+ResultSet rs=ps.executeQuery();
+while(rs.next())
+{
+flag=true;
+String	className=rs.getString(5);
+String	studentID=rs.getString(9);
+session.setAttribute("studentID", studentID);
+session.setAttribute("className", className);
+}
+}
+catch(Exception e)
+{
+System.out.println("Validation faild---"+e);
+}
+if (flag)
+{
+RequestDispatcher rd=request.getRequestDispatcher("WelcomeStudent");
+rd.forward(request, response);
+}
+else
+{
+response.sendRedirect("index.jsp");
+}
+
+}
+}
+{
+doGet(request, response);
+}}
+//Code for new account signup
+package com.info.controler;
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.info.model.User;
+import com.info.service.UserService;
+import com.otherID.OtherID;
+@WebServlet("/Signup")
+public class Signup extends HttpServlet {
+private static final long serialVersionUID = 1L;
+public Signup() {
+super();
+}
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+OtherID orgId=new OtherID();
+String id=orgId.genratedID();
+String name=request.getParameter("name");
+String email=request.getParameter("email");
+String phone=request.getParameter("phone");
+String address=request.getParameter("address");
+String username=request.getParameter("username");
+String password=request.getParameter("password");
+
+User model=new User(name, email, phone, address, username, password, id);
+UserService service=new UserService();
+boolean flag=service.signUp(model);
+response.sendRedirect("index.jsp");
+}
+protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+doGet(request, response);
+}
+}
+
+
+//Wecome user :CODE in java
+package com.info.controler;
+import java.io.IOException;
+import java.util.ArrayList;import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import com.info.model.FirModel;
+import com.info.service.FirService;
+@WebServlet("/WelcomeUser")
+public class WelcomeUser extends HttpServlet {
+private static final long serialVersionUID = 1L;
+public WelcomeUser() {
+super();
+}
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+HttpSession session=request.getSession();
+ArrayList<FirModel> firDb=FirService.getList();
+session.setAttribute("firDb", firDb);
+RequestDispatcher rd=request.getRequestDispatcher("User/welcomeUser.jsp");
+rd.forward(request, response);
+}
+protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+{
+doGet(request, response);
+}}
+
+
+//ADD CRIME:Code in java
+package com.info.controler;
+import java.io.IOException;
+import java.util.ArrayList;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import com.info.model.FirModel;
+import com.info.model.StaffModel;
+import com.info.service.FirService;
+import com.info.service.StaffService;
+import com.otherID.OtherID;
+@WebServlet("/AddCrime")
+public class AddCrime extends HttpServlet {
+private static final long serialVersionUID = 1L;
+public AddCrime() {
+super();
+}
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+HttpSession session =request.getSession();
+String userID=(String)session.getAttribute("Admin");
+String name=(String)session.getAttribute("userName");
+String phone=(String)session.getAttribute("userPhone");
+String email=(String)session.getAttribute("userEmail");
+OtherID idObj=new OtherID();
+String id=idObj.genratedID();
+String object=request.getParameter("object");
+String location=request.getParameter("location");
+String reason=request.getParameter("reason");
+String against=request.getParameter("against");
+String date=request.getParameter("date");
+String description=request.getParameter("des");
+String city=request.getParameter("city");
+String staff=request.getParameter("staffName");
+String status=request.getParameter("close");
+FirModel model=new FirModel(object, location, reason, against, date, description, userID, id, status, staff, name, phone, email, city);
+FirService obj=new FirService();
+obj.add(model);
+ArrayList<FirModel> firDb=FirService.getList();
+session.setAttribute("firDb", firDb);
+RequestDispatcher rd=request.getRequestDispatcher("Admin/addCrime.jsp");
+rd.forward(request, response);
+}
+protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+doGet(request, response);
+	}}
+//OFFICER ALLOCATION CODE 
+package com.info.controler;
+import java.io.IOException;
+import java.util.ArrayList;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import com.info.model.FirModel;
+import com.info.service.FirService;
+@WebServlet("/allocateStaff")
+public class AllocateStaff extends HttpServlet {
+private static final long serialVersionUID = 1L;
+public AllocateStaff() {
+super();
+}
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+String staffname=request.getParameter("staffname");
+String firID=request.getParameter("firID");
+FirService obj=new FirService();
+obj.allocate(staffname,firID);
+HttpSession session=request.getSession();
+ArrayList<FirModel> firDb=FirService.getList();
+session.setAttribute("firDb", firDb);
+RequestDispatcher rd=request.getRequestDispatcher("FirListAdmin");
+rd.forward(request, response);
+}protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+doGet(request, response);
+}
+}
+//Crimelist.java
+package com.info.controler;
+import java.io.IOException;
+import java.util.ArrayList;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import com.info.model.FirModel;
+import com.info.service.FirService;
+@WebServlet("/CrimeList")
+public class CrimeList extends HttpServlet {
+private static final long serialVersionUID = 1L;
+public CrimeList() {
+super();
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+HttpSession session=request.getSession();
+ArrayList<FirModel> firDb=FirService.getList();
+session.setAttribute("firDb", firDb);
+RequestDispatcher rd=request.getRequestDispatcher("Admin/CrimeList.jsp");
+rd.forward(request, response);
+}
+protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+doGet(request, response);
+}
+}
+Remove Staf.java
+package com.info.controler;
+import java.io.IOException;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import com.info.service.StaffService;
+@WebServlet("/RemoveStaff")
+public class RemoveStaff extends HttpServlet {
+private static final long serialVersionUID = 1L;
+public RemoveStaff() {
+super();
+}
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+String Id=request.getParameter("typeID");
+StaffSrvice obj = new StaffService();012.
+
+boolean flag= obj.remove(Id);
+if(flag)
+{
+RequestDispatcher rd=request.getRequestDispatcher("WelcomeAdmin");
+rd.forward(request, response);
+}
+else
+{
+RequestDispatcher rd=request.getRequestDispatcher("WelcomeAdmin");
+rd.forward(request, response);
+}
+}
+protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+doGet(request, response);
+}
+
+}
+//MODEL
+Firmodel.java
+package com.info.model;
+public class FirModel
+{
+private String Object;
+private String Location;
+private String Reason;
+private String Against;
+private String Date;
+private String Description;
+private String userID;
+private String id;
+private String status;
+private String staff;
+private String name;
+private String phone;
+private String email;
+private String city;
+public FirModel() {
+super();
+}
+public FirModel(String object, String location, String reason,
+String against, String date, String description, String userID,
+String id, String status, String staff, String name, String phone,
+String email, String city) {
+super();
+Object = object;
+Location = location;
+Reason = reason;
+Against = against;
+Date = date;
+Description = description;
+this.userID = userID;
+this.id = id;
+this.status = status;
+this.staff = staff;
+this.name = name;
+this.phone = phone;
+this.email = email;
+this.city = city;
+}
+public String getObject() {
+return Object;
+}
+public void setObject(String object) {
+Object = object;
+}
+public String getLocation() {
+return Location;
+}
+public void setLocation(String location) {
+Location = location;
+}
+public String getReason() {
+return Reason;
+}
+public void setReason(String reason) {
+Reason = reason;
+}
+public String getAgainst() {
+return Against;
+}
+public void setAgainst(String against) {
+Against = against;
+}
+public String getDate() {
+return Date;
+}
+public void setDate(String date) {
+Date = date;
+}
+public String getDescription() {
+return Description;
+}
+public void setDescription(String description) {
+Description = description;
+}
+
+public String getUserID() {
+return userID;
+}
+public void setUserID(String userID) {
+this.userID = userID;
+}
+public String getId() {
+return id;
+}
+public void setId(String id) {
+this.id = id;
+}
+public String getStatus() {
+return status;
+}
+public void setStatus(String status) {
+this.status = status;
+}
+public String getStaff() {
+return staff;
+}
+public void setStaff(String staff) {
+this.staff = staff;
+}
+public String getName() {
+return name;
+}	
+public void setName(String name) {
+this.name = name;
+}
+public String getPhone() {
+return phone;
+}
+public void setPhone(String phone) {
+this.phone = phone;
+}
+public String getEmail() {
+return email;
+}
+public void setEmail(String email) {
+this.email = email;
+}
+public String getCity() {
+return city;
+}
+public void setCity(String city) {
+this.city = city;
+}
+}
+UserModel.java
+package com.info.model;
+public class User
+{
+private String name;
+private String email;
+private String phone;
+private String address;
+private String username;
+private String password;
+private String id;
+public User() {
+super();
+}
+public User(String name, String email, String phone, String address,
+String username, String password, String id) {
+super();
+this.name = name;
+this.email = email;
+this.phone = phone;
+this.address = address;
+this.username = username;
+this.password = password;
+this.id = id;
+}
+public String getName() {
+return name;
+}
+public void setName(String name) {
+this.name = name;
+}
+public String getEmail() {
+return email;
+}
+public void setEmail(String email) {
+this.email = email;
+}
+public String getPhone() {
+return phone;
+}
+public void setPhone(String phone) {
+this.phone = phone;
+}
+public String getAddress() {
+return address;
+}
+public void setAddress(String address) {
+this.address = address;
+}
+public String getUsername() {
+return username;
+}
+public void setUsername(String username) {
+this.username = username;
+}
+public String getPassword() {
+return password;
+}
+public void setPassword(String password) {
+this.password = password;
+}
+public String getId() {
+return id;
+}
+public void setId(String id) {
+this.id = id;}}
+
+
